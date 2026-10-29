@@ -4,16 +4,10 @@ kill_signal = "SIGTERM"
 kill_timeout = "30s"
 
 [build]
-  dockerfile = "Dockerfile.arcade"
+  dockerfile = "Dockerfile.lanternwild"
 
 [env]
   NODE_ENV = "production"
-  OPENMS_HOST = "127.0.0.1"
-  OPENMS_PORT = "3200"
-  OPENMS_ORIGIN = "https://openms-arcade.fly.dev"
-  OPENMS_SERVER_URL = "http://127.0.0.1:3200"
-  ONLINE_HOST = "0.0.0.0"
-  ONLINE_PORT = "8080"
 
 [[mounts]]
   source = "openms_data"
@@ -28,13 +22,13 @@ kill_timeout = "30s"
   min_machines_running = 1
 
   [[http_service.checks]]
-    grace_period = "60s"
+    grace_period = "10s"
     interval = "30s"
     method = "GET"
-    timeout = "10s"
-    path = "/"
+    timeout = "5s"
+    path = "/api/health"
 
 [[vm]]
   cpu_kind = "shared"
   cpus = 1
-  memory = "2gb"
+  memory = "512mb"

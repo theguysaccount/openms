@@ -1,4 +1,15 @@
-# openms.dev
+# Lanternwild for arcade.fun
+
+This fork now hosts **Lanternwild**, an original woodland adventure using selected
+OpenMS movement and collision code. Start with [the Lanternwild README](original/README.md).
+The public build uses newly authored content and does not serve the original game's assets.
+The earlier stock prototype was retired; its saved data is preserved privately.
+Deploy only with `Dockerfile.lanternwild` and `fly.arcade.toml`.
+
+The upstream OpenMS documentation below is retained as an engineering reference.
+Its asset download and legacy bootstrap instructions are not the Lanternwild setup.
+
+# Upstream openms.dev reference
 
 NOTE: THIS PROJECT IS STILL IN DEVELOPMENT PHASE AND WILL UNDERGO SIGNIFICANT CHANGES.
 

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lanternwild · arcade.fun</title>
+    <meta
+      name="description"
+      content="Carry a little light into an untamed woodland. Explore floating islands, quiet the briarlings, and restore the beacons in an original shared adventure."
+    />
+    <meta name="theme-color" content="#102f33" />
+    <link rel="icon" href="/art/lantern.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a
+        class="arcade-link"
+        href="https://arcade.fun/"
+        aria-label="Back to arcade.fun"
+        >← arcade.fun</a
+      >
+      <a class="wordmark" href="/" aria-label="Lanternwild home"
+        ><img
+          src="/art/lantern.svg"
+          alt=""
+          width="27"
+          height="32"
+        />LANTERNWILD</a
+      >
+      <div class="utilities">
+        <span id="connection">A woodland adventure</span
+        ><button id="sound" type="button" aria-pressed="false">Sound off</button
+        ><button id="help" type="button" aria-label="Instructions and credits">
+          ?
+        </button>
+      </div>
+    </header>
+    <main id="stage">
+      <canvas
+        id="world"
+        tabindex="0"
+        aria-label="Lanternwild woodland. Move with arrows or A and D, jump with Space, attack with J, cast with K, interact with E."
+      ></canvas>
+      <section id="welcome" aria-labelledby="title">
+        <div class="welcome-copy">
+          <p class="eyebrow">AN ORIGINAL WOODLAND ADVENTURE</p>
+          <h1 id="title">
+            Lanternwild<span class="title-star" aria-hidden="true">✧</span>
+          </h1>
+          <p class="lead">A little light.<br />An untamed world.</p>
+          <p class="intro">
+            Beyond the mist, the old beacons are fading.<br />Take up your
+            lantern. Bring the woodland home.
+          </p>
+          <form id="join-form">
+            <div id="new-keeper">
+              <label for="keeper-name">Your keeper’s name</label>
+              <input
+                id="keeper-name"
+                name="name"
+                placeholder="Wandering light"
+                minlength="2"
+                maxlength="18"
+                pattern="[A-Za-z0-9 _\-]{2,18}"
+                autocomplete="nickname"
+                required
+              />
+              <fieldset class="colors">
+                <legend>Choose your cloak</legend>
+                <label class="swatch teal"
+                  ><input type="radio" name="color" value="0" checked /><span
+                    >Fern</span
+                  ></label
+                >
+                <label class="swatch rust"
+                  ><input type="radio" name="color" value="1" /><span
+                    >Ember</span
+                  ></label
+                >
+                <label class="swatch lavender"
+                  ><input type="radio" name="color" value="2" /><span
+                    >Dusk</span
+                  ></label
+                >
+                <label class="swatch gold"
+                  ><input type="radio" name="color" value="3" /><span
+                    >Honey</span
+                  ></label
+                >
+              </fieldset>
+            </div>
+            <p id="returning" hidden></p>
+            <button class="primary" id="enter" type="submit" disabled>
+              Loading the woodland… <span aria-hidden="true">↗</span>
+            </button>
+            <p id="join-error" role="alert"></p>
+          </form>
+          <p class="fine">
+            Free play · Shared world · Keyboard adventure<br />Progress saved in
+            this browser’s keeper session.
+          </p>
+        </div>
+        <div class="welcome-caption">
+          <span>01 / THISTLEDOCK</span>
+          <p>Where the lanterns<br />meet the clouds.</p>
+        </div>
+      </section>
+      <div id="hud" hidden>
+        <section class="keeper-card" aria-label="Keeper status">
+          <div class="portrait">✧</div>
+          <div>
+            <strong id="player-name">Keeper</strong
+            ><small id="player-level">LEVEL 1 · LANTERN KEEPER</small>
+            <div class="meter health"><span id="health-fill"></span></div>
+            <div class="meter energy"><span id="energy-fill"></span></div>
+            <small id="health-text">100 / 100 health</small>
+          </div>
+        </section>
+        <section class="location">
+          <p id="region">Thistledock</p>
+          <span id="online">1 keeper wandering</span>
+        </section>
+        <button class="quest-card" id="quest-toggle" type="button">
+          <span class="quest-symbol">✧</span
+          ><span
+            ><small>THE LIGHT WE CARRY</small
+            ><strong id="objective">Speak to Rowan at the dock</strong
+            ><span id="beacon-progress">○　○　○</span></span
+          ><span class="quest-arrow">↗</span>
+        </button>
+        <div id="toast" role="status" aria-live="polite"></div>
+        <div id="interaction" hidden>
+          <kbd>E</kbd><span>Speak to Rowan</span>
+        </div>
+        <nav class="actionbar" aria-label="Game controls">
+          <span><kbd>← →</kbd> Move</span><span><kbd>Space</kbd> Jump</span
+          ><span><kbd>J</kbd> Sweep</span><span><kbd>K</kbd> Lantern bolt</span
+          ><span><kbd>E</kbd> Interact</span
+          ><button id="bag" type="button">
+            <kbd>I</kbd> Satchel <b id="sparks">0 ✧</b>
+          </button>
+        </nav>
+        <div id="journey" aria-label="Journey progress">
+          <span id="journey-fill"></span><i>✧</i><i>✧</i><i>✧</i>
+        </div>
+        <div id="reconnect" hidden>
+          <strong>The woodland connection paused.</strong>
+          <p id="reconnect-reason">Your last checkpoint is safe.</p>
+          <button id="rejoin" class="primary" type="button">Reconnect</button
+          ><a href="/">Return to title</a>
+        </div>
+      </div>
+    </main>
+    <dialog id="panel">
+      <button class="close" id="panel-close" type="button" aria-label="Close">
+        ×
+      </button>
+      <div id="panel-body"></div>
+    </dialog>
+    <div id="small-screen">
+      <img src="/art/lantern.svg" width="50" height="64" alt="" />
+      <h2>A wider window into the wild.</h2>
+      <p>
+        Lanternwild is a keyboard adventure. Open it on a desktop or laptop with
+        a window at least 800px wide.
+      </p>
+      <a href="https://arcade.fun/">← Back to arcade.fun</a>
+    </div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
