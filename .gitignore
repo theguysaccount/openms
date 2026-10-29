@@ -9,6 +9,7 @@ artifacts/
 **/report.json
 **/*-report.json
 client/public/generated/
+client/public/arcade/arcade-source.tar.gz
 client/dist/
 client/.cache/
 docs/.vitepress/cache/

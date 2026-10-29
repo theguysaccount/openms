@@ -1,0 +1,40 @@
+app = "openms-arcade"
+primary_region = "iad"
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+[build]
+  dockerfile = "Dockerfile.arcade"
+
+[env]
+  NODE_ENV = "production"
+  OPENMS_HOST = "127.0.0.1"
+  OPENMS_PORT = "3200"
+  OPENMS_ORIGIN = "https://openms-arcade.fly.dev"
+  OPENMS_SERVER_URL = "http://127.0.0.1:3200"
+  ONLINE_HOST = "0.0.0.0"
+  ONLINE_PORT = "8080"
+
+[[mounts]]
+  source = "openms_data"
+  destination = "/data"
+  initial_size = "20gb"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "60s"
+    interval = "30s"
+    method = "GET"
+    timeout = "10s"
+    path = "/"
+
+[[vm]]
+  cpu_kind = "performance"
+  cpus = 2
+  memory = "16gb"

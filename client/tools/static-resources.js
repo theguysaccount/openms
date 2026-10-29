@@ -11,6 +11,10 @@ const SHELL = new Map([
   ["/online.css", "."],
   ["/openms-icon.png", "public"],
 ]);
+const ARCADE_RESOURCES = new Map([
+  ["/arcade-source.tar.gz", "arcade-source.tar.gz"],
+  ["/arcade-LICENSE.txt", "arcade-LICENSE.txt"],
+]);
 const WORKERS = new Set([
   "/dist/atlas-worker.js",
   "/dist/audio-capture-worklet.js",
@@ -21,6 +25,15 @@ const HASH_RESOURCE =
 /** Resolve the online shell, compiled bundles and immutable generated resources. */
 function resourcePath(path, options) {
   const { root, siteRoot } = options;
+  const arcadeFile = ARCADE_RESOURCES.get(path);
+  if (arcadeFile) {
+    const directory = resolve(root, "public/arcade");
+    return {
+      filename: resolve(directory, arcadeFile),
+      directory,
+      immutable: false,
+    };
+  }
   if (path === "/") path = "/index.html";
   if (
     siteRoot &&
