@@ -1,0 +1,17 @@
+FROM oven/bun:1.4.4
+WORKDIR /app
+
+# Only selected code enters this image. Legacy clients, WZ/generated assets,
+# game definitions, extractors and the PostgreSQL bootstrap are excluded.
+COPY LICENSE ./LICENSE
+COPY Dockerfile.lanternwild fly.arcade.toml ./
+COPY client/src/physics ./client/src/physics
+COPY original ./original
+RUN tar --exclude='original/public/lanternwild-source.tar.gz' \
+    --exclude='original/.cache' --exclude='*.sqlite*' \
+    -czf /tmp/lanternwild-source.tar.gz LICENSE Dockerfile.lanternwild fly.arcade.toml client/src/physics original \
+    && mv /tmp/lanternwild-source.tar.gz original/public/lanternwild-source.tar.gz
+
+ENV NODE_ENV=production
+EXPOSE 8080
+CMD ["bun", "original/server.js", "--host", "0.0.0.0", "--port", "8080", "--origin", "https://openms-arcade.fly.dev", "--data", "/data/lanternwild.sqlite"]

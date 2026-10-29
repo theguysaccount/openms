@@ -10,6 +10,8 @@ artifacts/
 **/*-report.json
 client/public/generated/
 client/public/arcade/arcade-source.tar.gz
+original/public/lanternwild-source.tar.gz
+original/.cache/
 client/dist/
 client/.cache/
 docs/.vitepress/cache/
