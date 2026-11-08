@@ -15,6 +15,29 @@
   color: var(--cream);
   background: var(--ink);
 }
+html[data-arcade-hosted="yes"] .topbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+html[data-arcade-hosted="yes"] .arcade-link,
+html[data-arcade-hosted="yes"] .wordmark {
+  display: none;
+}
+html[data-arcade-hosted="yes"] .utilities {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  width: max-content;
+}
+html[data-arcade-hosted="yes"] #stage {
+  height: 100dvh;
+  min-height: 0;
+}
 * {
   box-sizing: border-box;
 }

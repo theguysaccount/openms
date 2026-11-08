@@ -15,12 +15,65 @@ const child = Bun.spawn(
     "3115",
     "--origin",
     origin,
+    "--arcade-origin",
+    "https://lanternwild.arcade.fun",
     "--data",
     join(directory, "keepers.sqlite"),
   ],
   { stdout: "ignore", stderr: "inherit" },
 );
 const peers = [];
+
+test("the Arcade entry restores the same keeper and rejects reused or foreign proofs", async () => {
+  const response = await fetch(origin + "/api/keeper", {
+    method: "POST",
+    headers: { Origin: origin, "Content-Type": "application/json" },
+    body: JSON.stringify({ name: "Returning keeper", color: 1 }),
+  });
+  const cookie = response.headers.get("set-cookie").split(";")[0];
+  const prior = await response.json();
+  const entry = await fetch(origin + "/arcade-entry", {
+    redirect: "manual",
+    headers: { Cookie: cookie },
+  });
+  expect(entry.status).toBe(200);
+  expect(await entry.text()).toContain("/arcade-entry-start.js");
+  const proof = await fetch(origin + "/api/arcade-entry-ticket", {
+    headers: { Cookie: cookie, "Sec-Fetch-Site": "same-origin" },
+  });
+  const { ticket } = await proof.json();
+  expect(ticket).toMatch(/^[a-f0-9]{64}$/);
+  expect(
+    (
+      await fetch(origin + "/api/arcade-entry-ticket", {
+        headers: { Cookie: cookie, "Sec-Fetch-Site": "cross-site" },
+      })
+    ).status,
+  ).toBe(403);
+  const foreign = await fetch(origin + "/api/arcade-entry", {
+    method: "POST",
+    headers: { Origin: "https://foreign.example" },
+    body: JSON.stringify({ ticket }),
+  });
+  expect(foreign.status).toBe(403);
+  const claim = () =>
+    fetch(origin + "/api/arcade-entry", {
+      method: "POST",
+      headers: { Origin: "https://lanternwild.arcade.fun" },
+      body: JSON.stringify({ ticket }),
+    });
+  const accepted = await claim();
+  expect(accepted.status).toBe(200);
+  expect(accepted.headers.get("set-cookie")).toContain(cookie);
+  expect(accepted.headers.get("set-cookie")).toContain(
+    "HttpOnly; SameSite=Strict; Secure",
+  );
+  expect((await claim()).status).toBe(409);
+  const saved = await fetch(origin + "/api/keeper", {
+    headers: { Cookie: cookie },
+  });
+  expect((await saved.json()).keeper).toEqual(prior.keeper);
+});
 
 beforeAll(async () => {
   let lastError;

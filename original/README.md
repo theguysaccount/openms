@@ -34,6 +34,16 @@ shutdown. Closing or restarting the game resumes the same keeper in that browser
 Clearing cookies loses access; cross-device accounts and guest recovery are not
 implemented. A second tab takes over the same keeper and closes the older session.
 
+Arcade's shared player embeds this game at `https://lanternwild.arcade.fun`.
+Its Strict cookie stays same-site with the parent. The explicit `--arcade-origin`
+flag enables only that exact additional origin; the older host remains accepted.
+On first entry, `/arcade-entry` returns an existing keeper to Arcade using a
+single-use, one-minute proof in the URL fragment. The game exchanges it at
+`/api/arcade-entry` for its own HttpOnly cookie; Arcade never receives the cookie.
+Expired/replayed proofs fail closed, and an existing keeper on the new host is
+preserved. No old save is deleted or merged. Frame ancestors are restricted to
+the same origin and `https://arcade.fun`; the original top-level game still works.
+
 ## Code, assets and deployment
 
 Retain the root GPL license and the OpenMS attribution. The selected OpenMS

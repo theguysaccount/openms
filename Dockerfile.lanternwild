@@ -14,4 +14,4 @@ RUN tar --exclude='original/public/lanternwild-source.tar.gz' \
 
 ENV NODE_ENV=production
 EXPOSE 8080
-CMD ["bun", "original/server.js", "--host", "0.0.0.0", "--port", "8080", "--origin", "https://openms-arcade.fly.dev", "--data", "/data/lanternwild.sqlite"]
+CMD ["bun", "original/server.js", "--host", "0.0.0.0", "--port", "8080", "--origin", "https://openms-arcade.fly.dev", "--arcade-origin", "https://lanternwild.arcade.fun", "--data", "/data/lanternwild.sqlite"]
