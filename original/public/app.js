@@ -57,6 +57,7 @@ frameId = requestAnimationFrame(drawFrame);
 
 async function loadKeeper() {
   try {
+    await window.LanternwildTransfer;
     const response = await fetch("/api/keeper");
     if (!response.ok) {
       throw new Error("The woodland is unavailable. Please try again shortly.");

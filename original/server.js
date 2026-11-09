@@ -12,12 +12,14 @@ import {
   stepWorld,
 } from "./game.js";
 import { WORLD_VERSION, emptyInput } from "./world.js";
+import { keeperTransfers } from "./arcade-entry.js";
 
 const options = parseArgs({
   options: {
     port: { type: "string", default: "3114" },
     host: { type: "string", default: "127.0.0.1" },
     origin: { type: "string", default: "http://127.0.0.1:3114" },
+    "arcade-origin": { type: "string", default: "" },
     data: { type: "string", default: ":memory:" },
   },
   strict: true,
@@ -26,6 +28,14 @@ const options = parseArgs({
 const root = fileURLToPath(new URL("./public/", import.meta.url));
 const sourceRoot = fileURLToPath(new URL("../", import.meta.url));
 const storage = openStorage(options.data);
+const transfers = keeperTransfers();
+const gameOrigins = new Set([options.origin]);
+if (options["arcade-origin"]) {
+  if (options["arcade-origin"] !== "https://lanternwild.arcade.fun") {
+    throw Error("The Arcade origin must be the reviewed Lanternwild host.");
+  }
+  gameOrigins.add(options["arcade-origin"]);
+}
 const actors = new Map();
 const encounter = createEncounter();
 const attempts = new Map();
@@ -82,7 +92,7 @@ function admitCreation(request, server) {
 }
 
 async function createKeeper(request, server) {
-  if (request.headers.get("origin") !== options.origin) {
+  if (!gameOrigins.has(request.headers.get("origin"))) {
     return json({ error: "Open the game on its own host." }, 403);
   }
   const existing = storage.find(cookieToken(request));
@@ -131,7 +141,7 @@ function validKeeper(value) {
 }
 
 function upgrade(request, server) {
-  if (request.headers.get("origin") !== options.origin) {
+  if (!gameOrigins.has(request.headers.get("origin"))) {
     return json({ error: "Invalid game origin." }, 403);
   }
   const keeper = storage.find(cookieToken(request));
@@ -153,11 +163,47 @@ function upgrade(request, server) {
     : json({ error: "Connection failed." }, 400);
 }
 
+/** Return an Arcade entry response, or null for ordinary game requests. */
+function arcadeNavigation(request, url) {
+  if (url.pathname === "/arcade-entry" && request.method === "GET") {
+    return staticResponse("/arcade-entry.html", request.method);
+  }
+  if (url.pathname === "/api/arcade-entry-ticket" && request.method === "GET") {
+    return issueTransfer(request);
+  }
+  if (url.pathname === "/api/arcade-entry" && request.method === "POST") {
+    return acceptTransfer(request);
+  }
+  if (
+    url.pathname === "/" &&
+    options["arcade-origin"] &&
+    request.headers.get("host") === new URL(options["arcade-origin"]).host &&
+    request.headers.get("sec-fetch-dest") === "document"
+  ) {
+    return Response.redirect("https://arcade.fun/play/lanternwild", 302);
+  }
+  return null;
+}
+
+/** Send a short-lived proof only to the fixed Arcade return address. */
+function issueTransfer(request) {
+  if (
+    ["cross-site", "same-site"].includes(request.headers.get("sec-fetch-site"))
+  ) {
+    return json({ error: "Open the keeper handoff on its own host." }, 403);
+  }
+  const cookie = cookieToken(request);
+  const ticket = storage.find(cookie) ? transfers.issue(cookie) : "";
+  return json({ ticket }, 200, { "Referrer-Policy": "no-referrer" });
+}
+
 async function fetchRequest(request, server) {
   if (stopping) {
     return json({ error: "The woodland is resting. Reconnect shortly." }, 503);
   }
   const url = new URL(request.url);
+  const entry = arcadeNavigation(request, url);
+  if (entry) return entry;
   if (url.pathname === "/socket") return upgrade(request, server);
   if (url.pathname === "/api/health") {
     return json({
@@ -178,6 +224,36 @@ async function fetchRequest(request, server) {
     return json({ error: "Method not allowed." }, 405);
   }
   return staticResponse(url.pathname, request.method);
+}
+
+/** Exchange a bounded one-use proof without exposing the keeper's session cookie. */
+async function acceptTransfer(request) {
+  if (
+    !options["arcade-origin"] ||
+    request.headers.get("origin") !== options["arcade-origin"]
+  ) {
+    return json({ error: "Invalid transfer origin." }, 403);
+  }
+  if (Number(request.headers.get("content-length") || 0) > 256) {
+    return json({ error: "Transfer is too large." }, 413);
+  }
+  const raw = await request.text();
+  if (raw.length > 256) return json({ error: "Transfer is too large." }, 413);
+  let ticket;
+  try {
+    ticket = JSON.parse(raw).ticket;
+  } catch {
+    return json({ error: "Invalid transfer." }, 400);
+  }
+  const cookie = transfers.consume(ticket);
+  // A lost success response can be retried after its cookie reached this browser.
+  if (storage.find(cookieToken(request))) return json({ ok: true });
+  if (!cookie || !storage.find(cookie)) {
+    return json({ error: "Transfer expired." }, 409);
+  }
+  return json({ ok: true }, 200, {
+    "Set-Cookie": `lw_session=${cookie}; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=31536000`,
+  });
 }
 
 function staticResponse(path, method) {
@@ -204,7 +280,7 @@ function staticResponse(path, method) {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "same-origin",
     "Content-Security-Policy":
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self' https://arcade.fun; base-uri 'none'; form-action 'self'",
   };
   return new Response(method === "HEAD" ? null : Bun.file(file), { headers });
 }
